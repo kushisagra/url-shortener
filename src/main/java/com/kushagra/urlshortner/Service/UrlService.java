@@ -24,6 +24,8 @@ public class UrlService {
 
     private final CacheService cacheService;
 
+    private final AnalyticsService analyticsService;
+
     @Value("${app.base-url}")
     private String baseUrl;
 
@@ -67,21 +69,27 @@ public class UrlService {
 
     }
 
-    public String resolveUrl(String shortCode) {
+    public String resolveUrl(String shortCode,
+                             String ipAddress,
+                             String userAgent,
+                             String referer) {
 
+        // Cache-Aside — same as Phase 2
         String cachedUrl = cacheService.getCachedUrl(shortCode);
         if (cachedUrl != null) {
+            // Fire analytics even on cache hit — still a real click
+            analyticsService.recordClick(shortCode, ipAddress, userAgent, referer);
             return cachedUrl;
         }
+
         Url url = urlRepository.findByShortCode(shortCode)
                 .orElseThrow(() -> new UrlNotFoundException(shortCode));
 
-        // Check if expired
         if (url.getExpiresAt() != null && LocalDateTime.now().isAfter(url.getExpiresAt())) {
             throw new UrlExpiredException(shortCode);
         }
-        // 4. Store in Redis so next request is a cache hit
-        // Use remaining TTL if link has expiry, otherwise use default
+
+        // Cache the URL
         if (url.getExpiresAt() != null) {
             Duration remainingTtl = Duration.between(LocalDateTime.now(), url.getExpiresAt());
             cacheService.cacheUrl(shortCode, url.getOriginalUrl(), remainingTtl);
@@ -89,8 +97,10 @@ public class UrlService {
             cacheService.cacheUrl(shortCode, url.getOriginalUrl());
         }
 
+        // Fire analytics asynchronously — doesn't block redirect
+        analyticsService.recordClick(shortCode, ipAddress, userAgent, referer);
 
-        // Increment click count
+        // Update click count on Url entity too
         url.setClickCount(url.getClickCount() + 1);
         urlRepository.save(url);
 

@@ -1,0 +1,52 @@
+# Render Blueprint - Infrastructure as Code
+# This file tells Render how to deploy your app
+
+services:
+  # Web Service (your Spring Boot app)
+  - type: web
+    name: urlshortner-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free  # Change to 'starter' or higher for production
+    healthCheckPath: /api/health
+    envVars:
+      # Database URL - will be set when you connect a database
+      - key: DATABASE_URL
+        fromDatabase:
+          name: urlshortner-db
+          property: connectionString
+      # Redis URL - will be set when you connect Redis
+      - key: REDIS_HOST
+        fromService:
+          name: urlshortner-redis
+          type: redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          name: urlshortner-redis
+          type: redis
+          property: port
+      - key: REDIS_PASSWORD
+        fromService:
+          name: urlshortner-redis
+          type: redis
+          property: password
+      # These you'll set manually in Render dashboard
+      - key: JWT_SECRET
+        sync: false  # Must be set manually - don't sync to repo!
+      - key: BASE_URL
+        sync: false  # Set to your Render URL after deployment
+
+  # PostgreSQL Database
+  - type: postgres
+    name: urlshortner-db
+    plan: free  # Free tier: 1GB, 90-day retention
+    databaseName: urlshortner
+    user: urlshortner_user
+
+  # Redis Cache
+  - type: redis
+    name: urlshortner-redis
+    plan: free  # Free tier: 25MB
+    maxmemoryPolicy: allkeys-lru
+
