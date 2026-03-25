@@ -61,6 +61,16 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/{shortCode}").permitAll()  // Redirect (anyone can use short links)
                 .requestMatchers("/api/analytics/**").permitAll()      // Analytics (optional: make protected later)
 
+                // Swagger UI endpoints — public for API documentation
+                .requestMatchers(
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/v3/api-docs/**",
+                        "/v3/api-docs.yaml",
+                        "/swagger-resources/**",
+                        "/webjars/**"
+                ).permitAll()
+
                 // Everything else requires authentication
                 .anyRequest().authenticated()
             )
