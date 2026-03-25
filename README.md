@@ -466,7 +466,7 @@ This project is licensed under the MIT License.
 
 **Kushagra**
 
-- GitHub: [@kushagra](https://github.com/kushagra)
+- GitHub: [@kushisagra](https://github.com/kushisagra)
 - Live Demo: [url-shortener-zcrg.onrender.com](https://url-shortener-zcrg.onrender.com)
 
 ---
